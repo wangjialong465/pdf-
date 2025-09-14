@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF完整查看器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <style>
+        #pdf-container {
+            width: 100%;
+            margin: 20px auto;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            max-width: 100%;
+        }
+        .page-counter {
+            color: #666;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="pdf-container"></div>
+
+    <script>
+        // 设置Worker路径（必需）
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+        // 加载PDF文件（修改为你的路径）
+        const pdfUrl = 'document.pdf';
+
+        // 渲染所有PDF页面
+        pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+            console.log(`PDF加载成功，总页数: ${pdf.numPages}`);
+
+            // 清空容器（可选）
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = '';
+
+            // 循环渲染每一页
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                pdf.getPage(pageNum).then(page => {
+                    // 创建页面容器（包含页码标签和画布）
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'pdf-page';
+                    
+                    // 添加页码提示
+                    const pageLabel = document.createElement('div');
+                    pageLabel.className = 'page-counter';
+                    pageLabel.textContent = `第 ${pageNum} 页 / 共 ${pdf.numPages} 页`;
+                    pageDiv.appendChild(pageLabel);
+
+                    // 创建画布
+                    const canvas = document.createElement('canvas');
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    pageDiv.appendChild(canvas);
+
+                    // 添加到主容器
+                    container.appendChild(pageDiv);
+
+                    // 渲染页面内容
+                    page.render({
+                        canvasContext: canvas.getContext('2d'),
+                        viewport: viewport
+                    });
+                });
+            }
+        }).catch(error => {
+            console.error('PDF加载失败:', error);
+            document.getElementById('pdf-container').innerHTML = 
+                `<p style="color: red;">PDF加载失败：${error.message}</p>`;
+        });
+    </script>
+</body>
+</html>
